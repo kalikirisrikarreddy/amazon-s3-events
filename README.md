@@ -9,8 +9,8 @@
 
 <img src="output_screenshot.png"/>
 
-### Input image sample we use:
+# Input image sample we use:
 <img src="s3.png"/>
 
-### Output image we should see:
+# Output image we should see:
 <img src="blurred-s3.png"/>
