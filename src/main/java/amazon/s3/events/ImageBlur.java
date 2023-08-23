@@ -5,8 +5,6 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 
 import javax.imageio.ImageIO;
 
@@ -21,10 +19,6 @@ public class ImageBlur implements RequestHandler<S3Event, String> {
 
 	AmazonS3 amazonS3 = AmazonS3ClientBuilder.standard().withRegion("us-east-1").build();
 
-	String inputBucket = "amazon-s3-events-" + LocalDate.now().format(DateTimeFormatter.BASIC_ISO_DATE);
-
-	String outputBucket = "amazon-s3-events-" + LocalDate.now().format(DateTimeFormatter.BASIC_ISO_DATE) + "-output";
-
 	@Override
 	public String handleRequest(S3Event input, Context context) {
 		input.getRecords().stream().filter(rec -> rec.getEventName().equals("ObjectCreated:Put")).forEach(rec -> {
@@ -36,10 +30,10 @@ public class ImageBlur implements RequestHandler<S3Event, String> {
 				int index = 0, max = 400, radius = 10, a1 = 0, r = 0, g = 0, b = 0, x = 1, y = 1, x1, y1, d = 0;
 				Color colors[] = new Color[max];
 				FileOutputStream fos = new FileOutputStream(new File("/tmp/" + srcObjKey));
-				amazonS3.listObjects(inputBucket).getObjectSummaries().forEach(s -> {
+				amazonS3.listObjects(Constants.INPUT_BUCKET_NAME).getObjectSummaries().forEach(s -> {
 					System.out.println(s.getKey() + " - " + s.getSize());
 				});
-				fos.write(amazonS3.getObject(inputBucket, srcObjKey).getObjectContent().readAllBytes());
+				fos.write(amazonS3.getObject(Constants.INPUT_BUCKET_NAME, srcObjKey).getObjectContent().readAllBytes());
 				fos.close();
 				BufferedImage inputBufferedImage = ImageIO.read(new File("/tmp/" + srcObjKey));
 				System.out.println("read the input file");
@@ -75,7 +69,7 @@ public class ImageBlur implements RequestHandler<S3Event, String> {
 				}
 				ImageIO.write(outputBufferedImage, "png", new File("/tmp/" + dstObjKey));
 				System.out.println("Finished generating blurred content file");
-				amazonS3.putObject(outputBucket, dstObjKey, new File("/tmp/" + dstObjKey));
+				amazonS3.putObject(Constants.OUTPUT_BUCKET_NAME, dstObjKey, new File("/tmp/" + dstObjKey));
 				System.out.println("Finished uploading blurred content file");
 			} catch (SdkClientException | IOException e) {
 				e.printStackTrace();
